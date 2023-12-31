@@ -1,0 +1,80 @@
+﻿AppType=JavaFX
+Build1=Default,b4j.example
+File1=Layout1.bjl
+FileGroup1=Default Group
+Group=Default Group
+Library1=javaobject
+Library2=jcore
+Library3=jfx
+Library4=jxui
+Library5=threading
+Module1=cv2
+Module2=cvMat
+NumberOfFiles=1
+NumberOfLibraries=5
+NumberOfModules=2
+Version=9.8
+@EndOfDesignText@
+#Region Project Attributes 
+	#MainFormWidth: 600
+	#MainFormHeight: 600 
+#End Region
+
+#AdditionalJar: opencv-455
+
+Sub Process_Globals
+	Private fx As JFX
+	Private MainForm As Form
+	Private xui As XUI 
+	Private Button1 As B4XView
+	Private ListView1 As ListView
+End Sub
+
+Sub AppStart (Form1 As Form, Args() As String)
+	MainForm = Form1
+	MainForm.RootPane.LoadLayout("Layout1")
+	MainForm.Show
+	cv2.Initialize
+	loadOpenCV
+End Sub
+
+Private Sub Button1_MouseClicked (EventData As MouseEvent)
+	Dim dc As DirectoryChooser
+	dc.Initialize
+	Dim path As String = dc.Show(MainForm)
+	If File.Exists(path,"") Then
+		ListView1.Tag = path
+		For Each filename As String In File.ListFiles(path)
+			ListView1.Items.Add(filename)
+		Next
+	End If
+End Sub
+
+Private Sub Button2_MouseClicked (EventData As MouseEvent)
+	Dim matList As List
+	matList.Initialize
+	Dim concated As cvMat
+	concated.Initialize(Null)
+	For Each filename As String In ListView1.Items
+		Dim bytes() As Byte
+		bytes=File.ReadBytes(ListView1.Tag,filename)
+		Dim mat As cvMat
+		mat=cv2.bytesToMat(bytes)
+		matList.Add(mat)
+	Next
+	cv2.vconcat(matList,concated)
+	File.WriteBytes(ListView1.Tag,"merged.jpg",concated.mat2bytes)
+End Sub
+
+
+
+Sub loadOpenCV
+	Dim System As JavaObject
+	System.InitializeStatic("java.lang.System")
+	If File.Exists(File.DirApp,"opencvlib_path") Then
+		System.RunMethod("load",Array(File.ReadString(File.DirApp,"opencvlib_path")))
+	Else
+		System.RunMethod("loadLibrary",Array(cv2.NATIVE_LIBRARY_NAME))
+	End If
+End Sub
+
